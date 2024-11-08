@@ -4,7 +4,7 @@ from mysql.connector import Error
 def get_db_connection():
     db_name = "fitness_center"
     user = "root"
-    password = "Hgib1200!"
+    password = "[insert your password]"
     host = "localhost"
 
     try:

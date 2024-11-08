@@ -22,7 +22,6 @@ class MemberSchema(ma.Schema):
 class WorkoutSchema(ma.Schema):
     session_id = fields.String(dump_only=True)
     member_id = fields.String(required=True)
-    # date = fields.String(required=True)
     duration_minutes = fields.String(required=True)
     calories_burned = fields.String(required=True)
 
@@ -211,6 +210,37 @@ def add_workout():
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Update Workout Route
 
+@app.route("/workouts/<int:session_id>", methods=["PUT"])
+def update_workout(session_id):
+    try:
+        workout_data = workout_schema.load(request.json)
+    except ValidationError as e:
+        print(f"Error: {e}")
+        return jsonify(e.messages), 400
+    
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({"error":"Database connection failed"}), 500
+        cursor = conn.cursor()
+
+        updated_workout = (workout_data['member_id'], workout_data['date'], workout_data['duration_minutes'], workout_data['calories_burned'], session_id)
+
+        query = "UPDATE workoutsessions SET member_id = %s, date = %s, duration_minutes = %s, calories_burned = %s WHERE session_id = %s"
+
+        cursor.execute(query,updated_workout)
+        conn.commit()
+
+        return jsonify({"message":"Workout updated successfully"}), 201  
+          
+    except Error as e:
+        print(f"Error: {e}")
+        return jsonify({"error": "Internal Server Error"}), 500
+    
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # View Member Workouts Route
