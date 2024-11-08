@@ -9,6 +9,7 @@ app = Flask(__name__)
 ma  = Marshmallow(app)
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Member and Workout Schema
 
 class MemberSchema(ma.Schema):
     member_id = fields.String(dump_only=True)
@@ -20,8 +21,8 @@ class MemberSchema(ma.Schema):
 
 class WorkoutSchema(ma.Schema):
     session_id = fields.String(dump_only=True)
-    member_id = fields.String(dump_only=True)
-    date = fields.String(required=True)
+    member_id = fields.String(required=True)
+    # date = fields.String(required=True)
     duration_minutes = fields.String(required=True)
     calories_burned = fields.String(required=True)
 
@@ -175,6 +176,37 @@ def delete_member(id):
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Add Workout Route
 
+@app.route("/workouts", methods=["POST"])
+def add_workout():
+    try:
+        workout_data = workout_schema.load(request.json)
+    except ValidationError as e:
+        print(f"Error: {e}")
+        return jsonify(e.messages), 400
+
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({"error":"Database connection failed"}), 500
+        cursor = conn.cursor()
+
+        new_workout = (workout_data['member_id'], workout_data['duration_minutes'], workout_data['calories_burned'])
+
+        query = "INSERT INTO workoutsessions (member_id, date, duration_minutes, calories_burned) VALUES (%s, CURRENT_TIMESTAMP(), %s, %s)"
+
+        cursor.execute(query, new_workout)
+        conn.commit()
+
+        return jsonify({"message":"New workout successfully added"}), 201  
+    
+    except Error as e:
+        print(f"Error: {e}")
+        return jsonify({"error":"Internal Server Error"}), 500
+    
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Update Workout Route
@@ -183,10 +215,58 @@ def delete_member(id):
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # View Member Workouts Route
 
+@app.route("/workouts/<int:member_id>", methods=["GET"])
+def get_member_workouts(member_id):
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({"error":"Database connection failed"}), 500
+        cursor = conn.cursor(dictionary = True)
+
+        query = "SELECT * FROM workoutsessions WHERE member_id=%s"
+
+        cursor.execute(query, (member_id,))
+
+        workouts = cursor.fetchall()
+
+        return workouts_schema.jsonify(workouts)
+    
+    except Error as e:
+        print(f"Error: {e}")
+        return jsonify({"error":"Internal Server Error"}), 500
+    
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # View All Workouts Route
 
+@app.route("/workouts", methods=["GET"])
+def get_workouts():
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({"error":"Database connection failed"}), 500
+        cursor = conn.cursor(dictionary = True)
+
+        query = "SELECT * FROM workoutsessions"
+
+        cursor.execute(query)
+
+        workouts = cursor.fetchall()
+
+        return workouts_schema.jsonify(workouts)
+    
+    except Error as e:
+        print(f"Error: {e}")
+        return jsonify({"error":"Internal Server Error"}), 500
+    
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # Run in Debug
