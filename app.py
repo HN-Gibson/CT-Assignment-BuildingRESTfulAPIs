@@ -8,20 +8,41 @@ from mysql.connector import Error
 app = Flask(__name__)
 ma  = Marshmallow(app)
 
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 class MemberSchema(ma.Schema):
-    member_id = fields.String(required=True)
+    member_id = fields.String(dump_only=True)
     name = fields.String(required=True)
     age = fields.String(required=True)
 
     class Meta:
         fields = ("id", "name", "age")
 
+class WorkoutSchema(ma.Schema):
+    session_id = fields.String(dump_only=True)
+    member_id = fields.String(dump_only=True)
+    date = fields.String(required=True)
+    duration_minutes = fields.String(required=True)
+    calories_burned = fields.String(required=True)
+
+    class Meta:
+        fields = ("session_id", "member_id", "date", "duration_minutes", "calories_burned")
+
 member_schema = MemberSchema()
 members_schema = MemberSchema(many=True)
+
+workout_schema = WorkoutSchema()
+workouts_schema = WorkoutSchema(many=True)
+
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Welcome Page Route
 
 @app.route('/')
 def home():
     return 'Welcome to the Gym!'
+
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# View All Members Route
 
 @app.route("/members", methods=["GET"])
 def get_members():
@@ -47,6 +68,9 @@ def get_members():
         if conn and conn.is_connected():
             cursor.close()
             conn.close()
+
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Add Member Route
 
 @app.route("/members", methods=["POST"])
 def add_member():
@@ -80,6 +104,9 @@ def add_member():
             cursor.close()
             conn.close()
 
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#Update Member Route
+
 @app.route("/members/<int:id>", methods=["PUT"])
 def update_member(id):
     try:
@@ -112,6 +139,9 @@ def update_member(id):
             cursor.close()
             conn.close()
 
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#Delete Member Route
+
 @app.route("/members/<int:id>", methods=["DELETE"])
 def delete_member(id):   
     try:
@@ -142,7 +172,24 @@ def delete_member(id):
             cursor.close()
             conn.close()
 
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Add Workout Route
 
+
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Update Workout Route
+
+
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# View Member Workouts Route
+
+
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# View All Workouts Route
+
+
+#------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# Run in Debug
 
 if __name__ == '__main__':
     app.run(debug=True)
